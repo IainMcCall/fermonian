@@ -61,8 +61,8 @@ def main():
 
     # Update equity price data for new dates
     logger.info('Importing equity data at ' + str(time.time() - start_time) + ' seconds.')
-    master_equity_file = configs['EQ']['MASTER_FILE']
-    tickers = pd.read_csv(configs['EQ']['TICKER_FILE'])['ticker']
+    master_equity_file = configs['EQUITY']['MASTER_FILE']
+    tickers = pd.read_csv(configs['EQUITY']['TICKER_FILE'])['ticker']
     equity_master_update(master_equity_file, update_date, golden_dates, tickers)
     logger.info('Finished importing equity data at ' + str(time.time() - start_time) + ' seconds.')
 
@@ -71,7 +71,7 @@ def main():
     master_equity_file = configs['IR']['MASTER_FILE']
     rates = pd.read_csv(configs['IR']['RATES_FILE'])
     ir_master_update(master_equity_file, update_date, golden_dates, rates)
-    logger.info('Finished importing equity data at ' + str(time.time() - start_time) + ' seconds.')
+    logger.info('Finished importing ir data at ' + str(time.time() - start_time) + ' seconds.')
 
 
 if __name__ == "__main__":

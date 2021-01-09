@@ -3,23 +3,27 @@ import os
 import pandas as pd
 import yfinance as yf
 
-TICKERS = ['^FTSE', '^GSPC', '^STOXX50E', '^N225']
+# TICKERS = ['^FTSE', '^GSPC', '^STOXX50E', '^N225']
+TICKERS = ['MSFT']
 
 for t in TICKERS:
     print("Extracting data for " + t)
     name = yf.Ticker(t)
 
+    data = yf.download("^FTSE AAPL", start="2017-01-01", end="2017-04-30")
+    data.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', 'data.csv'))
+
     # get stock info
-    # pd.DataFrame(data=name.info).to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', TICKER + '_info.csv'))
+    # pd.DataFrame(data=name.info).to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', t + '_info.csv'))
     # print(name.options)
 
     # get historical market data
-    # hist = name.history(period="max")
+    # hist = name.history(period="5bd")
     # hist.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', t + '_hmd.csv'))
 
     # show financials
-    name.financials.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', 'msft_financials.csv'))
-    name.quarterly_financials.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', 'msft_quarterly_financials.csv'))
+    name.financials.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', t + '_financials.csv'))
+    name.quarterly_financials.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', t + '_quarterly_financials.csv'))
 
     # # show major holders
     # msft.major_holders.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'equity', 'msft_majority_holders.csv'))

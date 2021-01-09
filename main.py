@@ -1,15 +1,14 @@
 """
-
+Entry point to the function.
 """
 import argparse
 import datetime
 
-data_types = 'all, 'eq', 'ir', 'fx'
+data_types = 'all', 'eq', 'ir', 'fx'
 
 
 def main():
-    date = datetime.datetime.today().strftime('%Y-%m-%d')
-
+    print('Starting')
 
 
 if __name__ == "__main__":
