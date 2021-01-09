@@ -13,6 +13,8 @@ import pandas as pd
 
 from data_extract.dates_extract import business_dates
 from data_extract.extract_fx_hmd import fx_master_update
+from data_extract.extract_equity_hmd import equity_master_update
+from data_extract.extract_ir_hmd import ir_master_update
 
 
 def main():
@@ -47,7 +49,7 @@ def main():
     golden_dates = business_dates(dates_file, date_regions)
     logger.info('Finished importing business dates at ' + str(time.time() - start_time) + ' seconds.')
 
-    # Update FX data for missing dates
+    # Update FX data for new dates
     logger.info('Importing fx data at ' + str(time.time() - start_time) + ' seconds.')
     master_fx_file = configs['FX']['MASTER_FILE']
     major_ccys = configs['FX']['MAJOR_CCYS'].split(',')
@@ -56,6 +58,20 @@ def main():
     minor_ccys = [r.replace(' ', '') for r in minor_ccys]
     fx_master_update(master_fx_file, update_date, golden_dates, major_ccys, minor_ccys)
     logger.info('Finished importing fx data at ' + str(time.time() - start_time) + ' seconds.')
+
+    # Update equity price data for new dates
+    logger.info('Importing equity data at ' + str(time.time() - start_time) + ' seconds.')
+    master_equity_file = configs['EQ']['MASTER_FILE']
+    tickers = pd.read_csv(configs['EQ']['TICKER_FILE'])['ticker']
+    equity_master_update(master_equity_file, update_date, golden_dates, tickers)
+    logger.info('Finished importing equity data at ' + str(time.time() - start_time) + ' seconds.')
+
+    # Update rates for new dates
+    logger.info('Importing rates data at ' + str(time.time() - start_time) + ' seconds.')
+    master_equity_file = configs['IR']['MASTER_FILE']
+    rates = pd.read_csv(configs['IR']['RATES_FILE'])
+    ir_master_update(master_equity_file, update_date, golden_dates, rates)
+    logger.info('Finished importing equity data at ' + str(time.time() - start_time) + ' seconds.')
 
 
 if __name__ == "__main__":
