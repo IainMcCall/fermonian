@@ -19,7 +19,4 @@ def main():
     x = ret[:-1]
     y = ret['GBP'][1:]
     rf = random_forest_fun(x, y, work_dir)
-
-
-if __name__ == "__main__":
-        main()
+    print(rf)
