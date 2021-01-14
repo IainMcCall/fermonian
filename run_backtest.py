@@ -10,13 +10,12 @@ import time
 import pandas as pd
 
 from data_extract.dates_extract import business_dates
-from quant_functions.random_forest import random_forest_fun
 from quant_functions.basic import levels_to_returns
 
 logger = logging.getLogger('main')
 
 
-def run_model_call(date):
+def run_backtest_call(date):
     configs = configparser.ConfigParser()
     configs.read('model_config.ini')
     model_name = configs['COMMON']['MODEL_NAME']
@@ -24,14 +23,15 @@ def run_model_call(date):
     model_dir = os.path.join(configs['COMMON']['MODEL_DIR'], model_name)
     model_inputs = pd.read_csv(os.path.join(model_dir, 'inputs.csv'))
     model_outputs = os.path.join(model_dir, 'outputs')
+    model_backtest_output = os.path.join(model_dir, 'backtests')
     model_settings = pd.read_csv(os.path.join(model_dir, 'settings.csv'), index_col='field')
-    log_file = os.path.join(model_outputs, date + '.log')
+    log_file = os.path.join(model_outputs, date + '_backtest.log')
     if os.path.isfile(log_file):
         os.remove(os.path.join(log_file))
     fh = logging.FileHandler(log_file)
     fh.setLevel(logging.INFO)
     logger.addHandler(fh)
-    logger.info('Starting ' + model_name + ' run')
+    logger.info('Starting ' + model_name + '  back-test')
 
     start_time = time.time()
 
@@ -63,35 +63,16 @@ def run_model_call(date):
 
     # Run selected model
     model_output_file = pd.read_csv(os.path.join(model_outputs, 'model_outputs.csv'), index_col='Date')
-    model_type = str(model_settings.at['model_type', 'input'])
-    features = []
-    labels = []
+    backtest_results = pd.DataFrame()
     for i in range(len(model_inputs)):
-        name = model_inputs['data_type'][i] + '_' + model_inputs['field'][i]
-        if model_inputs['axis'][i] == 'feature':
-            features.append(name)
-        elif model_inputs['axis'][i] == 'label':
-            labels.append(name)
-    x = ret[features][:-1]
-    for l in labels:
-        logger.info('Beginning model analysis for ' + l)
-        y = ret[l][1:]
-        if model_type == 'random_forest':
-            nr_estimators = int(model_settings.at['estimators', 'input'])
-            test_size = float(model_settings.at['test_size', 'input'])
-            rf, feature_importances, mean_error, stdev, stdev_pred = random_forest_fun(x, y, estimators=nr_estimators,
-                                                                                       test_size=test_size)
-            y_pred = rf.predict(ret[features][-1:])
-            model_output_file.at['pred:' + l, date] = y_pred
-            model_output_file.at['mean_error:' + l, date] = mean_error
-            model_output_file.at['target_stdev:' + l, date] = stdev
-            model_output_file.at['pred_stdev:' + l, date] = stdev_pred
-            for i in range(len(feature_importances)):
-                f = feature_importances[i][0]
-                model_output_file.at['importance:' + l + '_' + f, date] = feature_importances[i][1]
-        else:
-            logger.error(model_type + ' is not a supported model type')
-        model_output_file.to_csv(os.path.join(model_outputs, 'model_outputs.csv'))
-        model_settings_new = pd.read_csv(os.path.join(model_outputs, 'settings_archive.csv'), index_col='field')
-        model_settings_new[date] = model_settings['input']
-        model_settings_new.to_csv(os.path.join(model_outputs, 'settings_archive.csv'))
+        if model_inputs['axis'][i] == 'label':
+            label = model_inputs['field'][i]
+            label_conc = model_inputs['data_type'][i] + '_' + label
+            logger.info('Beginning backtesting for ' + label_conc)
+            for d in model_output_file.columns[:-1]:
+                actual = ret.at[d, label_conc]
+                pred = model_output_file.at['pred:' + label_conc, d]
+                backtest_results.at['actual:' + label_conc, d] = actual
+                backtest_results.at['model:' + label_conc, d] = pred
+                backtest_results.at['error:' + label_conc, d] = pred - actual
+    backtest_results.to_csv(os.path.join(model_backtest_output, 'model_backtesting.csv'))

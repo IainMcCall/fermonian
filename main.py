@@ -6,8 +6,9 @@ import logging
 
 from run_data_extract import run_data_extract_call, run_data_extract_drop_call
 from run_model import run_model_call
+from run_backtest import run_backtest_call
 
-data_processes = 'extract', 'extract_drop', 'model'
+data_processes = 'extract', 'extract_drop', 'model', 'model_backtest'
 data_types = 'all', 'equity', 'ir', 'fx'
 
 
@@ -29,6 +30,8 @@ def main():
         run_data_extract_drop_call(args.date, args.nr_dates, args.data_type, data_types)
     elif args.process == 'model':
         run_model_call(args.date)
+    elif args.process == 'model_backtest':
+        run_backtest_call(args.date)
 
 
 if __name__ == "__main__":

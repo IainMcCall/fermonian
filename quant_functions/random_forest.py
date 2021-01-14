@@ -3,15 +3,11 @@ Provides random_forest_fun() function to calculate a random forest.
 
 """
 import logging
-import os
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pydot
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.tree import export_graphviz
 
 logger = logging.getLogger('main')
 
@@ -42,11 +38,11 @@ def random_forest_fun(features, labels, estimators=1000, test_size=0.25, random_
     predictions = rf.predict(test_features)
     errors = abs(predictions - test_labels)
     mean_error = np.mean(errors)
-    logger.info('Mean Absolute Error: ' + str(round(mean_error, 6) * 100) + '%')
+    logger.info('Mean Absolute Error: ' + str(np.round(mean_error, 6) * 100) + '%')
     stdev = np.std(test_labels)
-    logger.info('Target standard deviation: ' + str(round(stdev, 6) * 100) + '%')
+    logger.info('Target standard deviation: ' + str(np.round(stdev, 6) * 100) + '%')
     stdev_pred = np.std(predictions)
-    logger.info('Prediction standard deviation: ' + str(round(stdev_pred, 6) * 100) + '%')
+    logger.info('Prediction standard deviation: ' + str(np.round(stdev_pred, 6) * 100) + '%')
 
     importances = list(rf.feature_importances_)
     feature_importances = [(feature, round(importance, 6)) for feature, importance in zip(feature_list, importances)]
