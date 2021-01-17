@@ -12,7 +12,8 @@ import pandas as pd
 
 from data_extract.dates_extract import business_dates
 from quant_functions.random_forest import random_forest_fun
-from quant_functions.basic import levels_to_returns, regression_fun
+from quant_functions.basic import levels_to_returns
+from quant_functions.regression import regression_fun
 
 logger = logging.getLogger('main')
 
@@ -85,17 +86,16 @@ def run_model_call(date):
             y = ret[l][1:]
 
             # Random forest
+            test_size = float(model_settings.at['test_size', 'input'])
             if model_type == 'random_forest':
                 nr_estimators = int(model_settings.at['estimators', 'input'])
-                test_size = float(model_settings.at['test_size', 'input'])
-                rf, feature_importances, mean_error, stdev, stdev_pred = random_forest_fun(x, y,
-                                                                                           estimators=nr_estimators,
-                                                                                           test_size=test_size)
+                rf, feature_importances, mean_test_error, mean_test_fit = random_forest_fun(x, y,
+                                                                                            estimators=nr_estimators,
+                                                                                            test_size=test_size)
                 y_pred = rf.predict(ret[features][-1:])
                 model_output_file.at['pred:' + l, date] = y_pred
-                model_output_file.at['mean_error:' + l, date] = mean_error
-                model_output_file.at['target_stdev:' + l, date] = stdev
-                model_output_file.at['pred_stdev:' + l, date] = stdev_pred
+                model_output_file.at['mean_test_error:' + l, date] = mean_test_error
+                model_output_file.at['mean_test_fit:' + l, date] = mean_test_fit
                 for i in range(len(feature_importances)):
                     f = feature_importances[i][0]
                     model_output_file.at['importance:' + l + '_' + f, date] = feature_importances[i][1]
@@ -104,19 +104,23 @@ def run_model_call(date):
             elif model_type[:10] == 'regression':
                 regression_type = model_type[11:]
                 include_intercept = model_settings.at['include_intercept', 'input'].lower() == 'true'
-                lasso_alpha = float(model_settings.at['alpha', 'input'])
-                result, score, coef = regression_fun(regression_type, x, y, include_intercept, lasso_alpha)
+                alpha = float(model_settings.at['alpha', 'input'])
+                result, score, coef, mean_test_error, mean_test_fit = regression_fun(x, y, regression_type,
+                                                                                     include_intercept, alpha, test_size)
                 y_pred = result.predict(ret[features][-1:])
                 model_output_file.at['pred:' + l, date] = y_pred
+                model_output_file.at['mean_test_error:' + l, date] = mean_test_error
+                model_output_file.at['mean_test_fit:' + l, date] = mean_test_fit
                 model_output_file.at['r_squared:' + l, date] = score
                 for i in range(len(coef)):
                     guider = x.columns[i]
                     model_output_file.at['beta:' + l + '_' + guider, date] = coef[i]
+
             else:
                 logger.error(model_type + ' is not a supported model type')
 
-            model_output_file.to_csv(os.path.join(model_outputs, 'model_outputs.csv'))
-            model_settings_new = pd.read_csv(os.path.join(model_outputs, 'settings_archive.csv'), index_col='field')
-            new_model_settings = np.append(model_settings['input'].values, [str(min(y.index)), str(max(y.index))])
-            model_settings_new[date] = new_model_settings
-            model_settings_new.to_csv(os.path.join(model_outputs, 'settings_archive.csv'))
+        model_output_file.to_csv(os.path.join(model_outputs, 'model_outputs.csv'))
+        model_settings_new = pd.read_csv(os.path.join(model_outputs, 'settings_archive.csv'), index_col='field')
+        new_model_settings = np.append(model_settings['input'].values, [str(min(y.index)), str(max(y.index))])
+        model_settings_new[date] = new_model_settings
+        model_settings_new.to_csv(os.path.join(model_outputs, 'settings_archive.csv'))

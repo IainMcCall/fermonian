@@ -61,14 +61,14 @@ def linear_interpolate_1d(x, y, x_new):
     return y_new
 
 
-def regression_fun(regression_type, x, y, intercept, alpha=0):
+def linear_regression(regression_type, x, y, intercept, alpha=0):
     """
     Returns sklearn regression results.
 
     Args:
         regression_type (str): 'ols', 'ridge', 'lasso'
-        x (pandas.core.frame.DataFrame): Features (inputs)
-        y (list): Labels (targets)
+        x (ndarray): Features (inputs)
+        y (ndarray): Labels (targets)
         intercept (bool): Include an intercept in the regression.
         alpha (float): Regularisation amount to apply in ridge or lasso.
     """
