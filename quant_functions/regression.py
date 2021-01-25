@@ -38,7 +38,7 @@ def regression_fun(features, labels, regression_type, include_intercept, alpha, 
     test_result, score, coef = linear_regression(regression_type, train_features, train_labels, include_intercept, alpha)
     predictions = test_result.predict(test_features)
     sse = np.sum((predictions - test_labels) ** 2)
-    mean_model_error = np.mean(sse)
+    mean_model_error = np.sqrt(np.mean((predictions - test_labels) ** 2))
     logger.info('Out-of-bag model error: ' + str(np.round(mean_model_error, 6) * 100) + '%')
     tss = np.sum((test_labels - np.mean(test_labels)) ** 2)
 

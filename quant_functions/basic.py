@@ -4,46 +4,76 @@ Provides basic quant functions to be reused.
 """
 
 import numpy as np
-import pandas as pd
 import sklearn
 
 
-def levels_to_returns(data, method, horizon, overlapping):
+def series_interp(series, method):
     """
-    Converts a dataframe of levels into returns.
+    Returns an interpolated series for an input.
 
     Args:
-        data (pandas.core.frame.DataFrame): Input dataframe with dates in index and series in columns.
+        series (ndarray): Series input.
+        method (str): Fill missing data method.
+
+    Returns:
+        (ndarray): Interpolate series output.
+    """
+    series = series.values
+    if method == 'flat':
+        for i in range(1, len(series)):
+            if series[i] is None:
+                series[i] = series[i - 1]
+    elif method[:6] == 'interp':
+        for i in range(1, len(series)):
+            if np.isnan(series[i]) or series[i] == 0:
+                pos_f = i
+                pos_b = i
+                while pos_f < len(series) and (np.isnan(series[pos_f]) or series[pos_f] == 0):
+                    pos_f += 1
+                while pos_b >= 0 and (np.isnan(series[pos_b]) or series[pos_b] == 0):
+                    pos_b -= 1
+                d = (i - pos_b) / (pos_f - pos_b)
+                if method[-3:] == 'lin' and pos_f < len(series):
+                    series[i] = series[pos_f] * d + series[pos_b] * (1 - d)
+                elif method[-6:] == 'loglin' and pos_f < len(series):
+                    series[i] = (series[pos_f] ** d) * (series[pos_b] ** (1 - d))
+    return series
+
+
+def levels_to_returns(hmd, method, horizon, overlapping, data_fill):
+    """
+    Converts a series of levels into returns.
+
+    Args:
+        hmd (pandas.core.series.Series): Input hmd data.
         method (str): 'absolute', 'relative', 'log'
         horizon (int): Day lag for returns.
-        overlapping (bool): Is the data overlapping?
+        overlapping (bool): Use overlapping returns.
+        data_fill (str): Fill missing data method.
 
     Returns:
         (pandas.core.frame.DataFrame): Dataframe containing returns for dates.
     """
     if overlapping:
-        n = len(data)
+        n = len(hmd)
         all_dates = []
         pos = horizon - n % horizon - 1
         for d in range(int(n / horizon)):
-            all_dates.append(data.index[pos])
+            all_dates.append(hmd.index[pos])
             pos += horizon
-        data = data[data.index.isin(all_dates)]
+        hmd = hmd[hmd.index.isin(all_dates)]
         horizon = 1
-    all_returns = pd.DataFrame(index=data.index[horizon:])
-    n = len(data)
-    for c in data:
-        series = data[c]
-        returns = []
-        for i in range(n - horizon):
-            if method == 'absolute':
-                returns.append(series[i+horizon] - series[i])
-            elif method == 'relative':
-                returns.append(series[i+horizon] / series[i] - 1)
-            elif method == 'log':
-                returns.append(np.log(series[i+horizon] / series[i]))
-        all_returns[c] = returns
-    return all_returns
+    n = len(hmd)
+    hmd = series_interp(hmd, data_fill)
+    returns = []
+    for i in range(n - horizon):
+        if method == 'absolute':
+            returns.append(hmd[i+horizon] - hmd[i])
+        elif method == 'relative':
+            returns.append(hmd[i+horizon] / hmd[i] - 1)
+        elif method == 'log':
+            returns.append(np.log(hmd[i+horizon] / hmd[i]))
+    return returns
 
 
 def linear_interpolate_1d(x, y, x_new):

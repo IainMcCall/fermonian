@@ -55,7 +55,7 @@ def run_backtest_call(date):
             master_data = pd.read_csv(os.path.join(master_data_dir, 'master_' + dt + '.csv'), index_col='Date')
             fields = model_inputs['field'][model_inputs['data_type'] == dt]
             for f in fields:
-                hmd[dt + '_' + f] = master_data[f]
+                hmd[dt + '|' + f] = master_data[f]
 
         # Translate data into input for calculation
         golden_dates = [str(d)[:10] for d in golden_dates]
