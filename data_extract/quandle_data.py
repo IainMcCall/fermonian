@@ -79,11 +79,20 @@ def main():
 
     # FRED
     data = pd.DataFrame()
-    ticker = 'ECB/FM_M_U2_EUR_4F_BB_U2_10Y_YLD'
+    ticker = 'FRED/GDP'
     print('Extracting data for ' + ticker)
-    new_data = quandl.get(ticker)
+    new_data = quandl.get(ticker, start_date='2010-10-01', end_date='2031-10-01')
     data = data.append(new_data, ignore_index=False)
+    print(data)
     data.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'ir', 'eu_10Y.csv'))
+
+    # FX
+    # data = pd.DataFrame()
+    # ticker = 'ECB/FM_M_U2_EUR_4F_BB_U2_10Y_YLD'
+    # print('Extracting data for ' + ticker)
+    # new_data = quandl.get(ticker)
+    # data = data.append(new_data, ignore_index=False)
+    # data.to_csv(os.path.join('C:/', 'LocalFolder', 'temp', 'ir', 'eu_10Y.csv'))
 
 
 if __name__ == '__main__':

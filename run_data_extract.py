@@ -14,6 +14,7 @@ import pandas as pd
 from data_extract.dates_extract import business_dates
 from data_extract.extract_fx_hmd import fx_master_update
 from data_extract.extract_equity_hmd import equity_master_update
+from data_extract.extract_economics import economics_master_update
 from data_extract.extract_ir_hmd import ir_master_update
 
 logger = logging.getLogger('main')
@@ -66,6 +67,13 @@ def run_data_extract_call(date, data_type):
         rates = pd.read_csv(configs['IR']['RATES_FILE'])
         ir_master_update(master_equity_file, update_date, golden_dates, rates)
         logger.info('Finished importing ir data at ' + str(time.time() - start_time) + ' seconds.')
+
+    if data_type in ['all', 'economics']:
+        logger.info('Importing economics data at ' + str(time.time() - start_time) + ' seconds.')
+        master_equity_file = configs['ECONOMICS']['MASTER_FILE']
+        rates = pd.read_csv(configs['ECONOMICS']['ECONOMICS_FILE'])
+        ir_master_update(master_equity_file, update_date, golden_dates, rates)
+        logger.info('Finished importing economics data at ' + str(time.time() - start_time) + ' seconds.')
 
 
 def run_data_extract_drop_call(date, days, data_type, all_data_types):

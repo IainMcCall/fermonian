@@ -27,6 +27,7 @@ def run_backtest_call(date):
         all_models = [line.rstrip() for line in f]
 
     for model_name in all_models:
+        logger.info("Starting " + model_name + " backtest at " + str(time.time() - start_time) + " seconds")
         model_dir = os.path.join(configs['COMMON']['MODEL_DIR'], model_name)
         model_inputs = pd.read_csv(os.path.join(model_dir, 'inputs.csv'))
         model_outputs = os.path.join(model_dir, 'outputs')
@@ -48,23 +49,26 @@ def run_backtest_call(date):
         golden_dates = business_dates(dates_file, date_regions)
         logger.info('Finished importing business dates at ' + str(time.time() - start_time) + ' seconds.')
 
-        # Import data
-        hmd = pd.DataFrame()
-        input_data_types = set(model_inputs['data_type'])
-        for dt in input_data_types:
-            master_data = pd.read_csv(os.path.join(master_data_dir, 'master_' + dt + '.csv'), index_col='Date')
-            fields = model_inputs['field'][model_inputs['data_type'] == dt]
-            for f in fields:
-                hmd[dt + '|' + f] = master_data[f]
-
         # Translate data into input for calculation
         golden_dates = [str(d)[:10] for d in golden_dates]
         horizon = int(model_settings.at['horizon', 'input'])
         historical_days = int(model_settings.at['historical_days', 'input'])
-        hmd = hmd[hmd.index.isin(golden_dates)][-historical_days:]
-        functional_form = str(model_settings.at['functional_form', 'input'])
         overlapping = model_settings.at['overlapping', 'input'].lower() == 'true'
-        ret = levels_to_returns(hmd, functional_form, horizon, overlapping)
+
+        # Import data and convert into returns
+        ret = pd.DataFrame()
+        input_data_types = set(model_inputs['data_type'])
+        for dt in input_data_types:
+            master_data = pd.read_csv(os.path.join(master_data_dir, 'master_' + dt + '.csv'), index_col='Date')
+            master_data = master_data[master_data.index.isin(golden_dates)][-historical_days:]
+            fields = model_inputs['field'][model_inputs['data_type'] == dt]
+            for f in fields:
+                hmd = master_data[f]
+                functional_form = str(model_inputs['functional_form'][model_inputs['field'] == f].values[0])
+                data_fill = str(model_inputs['data_fill'][model_inputs['field'] == f].values[0])
+                ret_f = levels_to_returns(hmd, functional_form, horizon, overlapping, data_fill)
+                ret[dt + '|' + f] = ret_f
+        ret.index = hmd.index.values[horizon:]
         ret = ret.fillna(0)
 
         # Run selected model
@@ -73,9 +77,9 @@ def run_backtest_call(date):
         for i in range(len(model_inputs)):
             if model_inputs['axis'][i] == 'label':
                 label = model_inputs['field'][i]
-                label_conc = model_inputs['data_type'][i] + '_' + label
+                label_conc = model_inputs['data_type'][i] + '|' + label
                 logger.info('Beginning backtesting for ' + label_conc)
-                for d in model_output_file.columns[:-1]:
+                for d in model_output_file.columns:
                     actual = ret.at[d, label_conc]
                     pred = model_output_file.at['pred:' + label_conc, d]
                     backtest_results.at['actual:' + label_conc, d] = actual

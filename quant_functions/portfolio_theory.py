@@ -53,6 +53,9 @@ def markov_weights(returns, target):
     covariance = returns.cov()
     cons = ({'type': 'eq', 'fun': target_return, 'args': (avg_returns, target)},
             {'type': 'eq', 'fun': sum_weights})
-    bnds = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-    calibration = minimize(fun=portfolio_stdev, x0=weight_0, bounds=bnds, args=covariance, method='SLSQP', constraints=cons)
+    bnds = []
+    for i in range(n):
+        bnds.append((0, 1))
+    calibration = minimize(fun=portfolio_stdev, x0=weight_0, bounds=bnds, args=covariance, method='COBYLA',
+                           constraints=cons)
     return calibration
